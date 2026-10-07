@@ -244,10 +244,6 @@ blockquote{font-family:'Fraunces',serif;font-style:italic;font-size:clamp(20px,5
   </div>
 </section>
 
-<!-- ===== BONUS QUIZ ===== -->
-<section id="screen-quiz" class="screen">
-  <div class="center" id="quiz"></div>
-</section>
 
 <!-- ===== END ===== -->
 <section id="screen-end" class="screen">
@@ -387,14 +383,6 @@ const STORIES = [
   }
 ];
 
-const QUIZ = [
-  { quote: `We paddled kayaks through two-level wharf cellars and under old stone bridges.`, answer: 'utrecht', from: 's1' },
-  { quote: `Paintings I'd only ever seen in textbooks were suddenly right in front of me.`, answer: 'amsterdam', from: 's2' },
-  { quote: `We watched clogs and cheese being made next to working windmills.`, answer: 'zaanse', from: 's1' },
-  { quote: `It rained the whole time, but a group of strangers invited me to spend the night with them.`, answer: 'utrecht', from: 's4' },
-  { quote: `A canal boat tour, stroopwafels, and every single bar was full on a Saturday.`, answer: 'amsterdam', from: 's3' },
-  { quote: `I spent my time browsing little knick-knacks in the small shops of Walstraat.`, answer: 'deventer', from: 's5' }
-];
 
 /* ===================================================================== */
 
@@ -649,64 +637,27 @@ function closeCity() {
   if (m.hidden) return;
   m.hidden = true; m.innerHTML = '';
   document.body.style.overflow = '';
-  if (modalOpts.fromMatch && state.matched.size === CITIES.length && !state.quizDone) setTimeout(showBonusIntro, 250);
+  if (modalOpts.fromMatch && state.matched.size === CITIES.length && !state.ended) { state.ended = true; setTimeout(renderEnd, 250); }
   modalOpts = {};
 }
 $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeCity(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCity(); });
 
-/* ---------- Bonus quiz ---------- */
-function showBonusIntro() {
-  $('#quiz').innerHTML = `
-    <svg class="big-icon" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3"><circle cx="32" cy="32" r="28"/><circle cx="32" cy="32" r="22" stroke-width="1.5" stroke-dasharray="3 4"/><path d="M22 33l7 7 14-15" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <p class="eyebrow">Passport complete</p>
-    <h1>Bonus round: whose memory is it?</h1>
-    <p class="lead">Read a moment from one of our trips and guess which city it happened in. ${QUIZ.length} quick questions.</p>
-    <div class="btn-row"><button class="btn" id="qStart">Start bonus round</button><button class="btn ghost" id="qSkip">Skip to results</button></div>`;
-  $('#qStart').addEventListener('click', () => { state.q = 0; state.quizScore = 0; renderQ(); });
-  $('#qSkip').addEventListener('click', () => { state.quizDone = true; state.quizSkipped = true; renderEnd(); });
-  showScreen('quiz');
-}
-function renderQ() {
-  const q = QUIZ[state.q];
-  $('#quiz').innerHTML = `
-    <p class="eyebrow">Bonus round · ${state.q + 1} / ${QUIZ.length}</p>
-    <div class="qbar"><i style="width:${(state.q / QUIZ.length) * 100}%"></i></div>
-    <blockquote>“${q.quote}”</blockquote>
-    <p>Which city is this memory from?</p>
-    <div class="opts">${CITIES.map(c => `<button class="opt" data-id="${c.id}">${c.name}</button>`).join('')}</div>
-    <div class="qfb" id="qfb" aria-live="polite"></div>`;
-  $$('.opt').forEach(b => b.addEventListener('click', () => answerQ(b)));
-  window.scrollTo(0, 0);
-}
-function answerQ(btn) {
-  const q = QUIZ[state.q], ok = btn.dataset.id === q.answer, s = storyById(q.from);
-  $$('.opt').forEach(b => { b.disabled = true; if (b.dataset.id === q.answer) b.classList.add('right'); });
-  if (!ok) btn.classList.add('wrong'); else state.quizScore++;
-  const last = state.q === QUIZ.length - 1;
-  $('#qfb').innerHTML = `${ok ? '<b class="r">✓ Correct!</b>' : `<b class="w">✗ It was ${byId(q.answer).name}.</b>`}
-    From ${s.author}'s trip: “${s.title}”.
-    <div style="margin-top:14px"><button class="btn" id="qNext">${last ? 'See results →' : 'Next →'}</button></div>`;
-  $('#qNext').addEventListener('click', () => { if (last) { state.quizDone = true; renderEnd(); } else { state.q++; renderQ(); } });
-}
-
 /* ---------- End ---------- */
 function renderEnd() {
   const perfect = state.attempts === CITIES.length;
-  const quizPart = state.quizSkipped ? '' : state.quizScore;
   let rank = 'Curious Tourist';
-  if (perfect && (state.quizSkipped || state.quizScore === QUIZ.length)) rank = 'Master Navigator';
-  else if (state.hintsUsed <= 2 && (state.quizSkipped || state.quizScore >= QUIZ.length - 2)) rank = 'Seasoned Explorer';
+  if (perfect) rank = 'Master Navigator';
+  else if (state.hintsUsed <= 2) rank = 'Seasoned Explorer';
   $('#end').innerHTML = `
     <svg class="big-icon" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3"><circle cx="32" cy="32" r="28"/><circle cx="32" cy="32" r="22" stroke-width="1.5" stroke-dasharray="3 4"/><path d="M22 33l7 7 14-15" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <div class="rank">${rank}</div>
     <h1>You explored our Netherlands!</h1>
     <p class="lead">Every stamp collected. Here's the route through the places we visited.</p>
     <svg class="map end-map" id="endMap" viewBox="0 0 260 290" role="img" aria-label="Map with all visited places"></svg>
-    <div class="stats">
+    <div class="stats" style="grid-template-columns:repeat(2,1fr)">
       <div><b>${state.attempts}</b><small>match tries</small></div>
       <div><b>${state.hintsUsed}</b><small>hints used</small></div>
-      <div><b>${state.quizSkipped ? '–' : quizPart + '/' + QUIZ.length}</b><small>bonus score</small></div>
     </div>
     <p class="eyebrow">Revisit a city</p>
     <div class="revisit">${CITIES.map(c => `<button data-id="${c.id}">${c.name}</button>`).join('')}</div>

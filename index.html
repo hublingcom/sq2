@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dutch City Passport</title>
+<meta name="description" content="Match the photos to the Dutch cities we explored and collect a stamp for every city.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#F36C21; --orange-d:#C9550F; --navy:#14275C; --blue:#1C3F94;
+  --cream:#FAF5EA; --paper:#FFFDF8; --ink:#1D2433; --muted:#667085; --line:#E8DFCC;
+  --ok:#2E9D5B; --bad:#D64045; --gold:#F2D48A;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:'DM Sans',system-ui,-apple-system,sans-serif;background:var(--cream);color:var(--ink);
+  -webkit-tap-highlight-color:transparent;min-height:100vh;line-height:1.5}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;line-height:1.15;margin:0}
+button{font:inherit;cursor:pointer;color:inherit}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--orange-d);font-weight:700;margin:0 0 4px}
+.wrap{max-width:1040px;margin:0 auto}
+.screen{display:none;min-height:100vh;padding:20px 16px 48px}
+.screen.active{display:block;animation:fade .4s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.btn{border:0;border-radius:999px;padding:14px 26px;font-weight:700;font-size:16px;background:var(--orange);color:#fff;
+  box-shadow:0 4px 0 var(--orange-d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--orange-d)}
+.btn.ghost{background:transparent;color:var(--navy);box-shadow:none;border:2px solid var(--navy)}
+.btn.block{width:100%}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:16px}
+
+/* ---------- Cover ---------- */
+#screen-cover.active{display:grid;place-items:center;gap:24px;align-content:center}
+.passport{width:min(320px,86vw);aspect-ratio:3/4.2;background:linear-gradient(150deg,#21418f,#10214b);
+  border-radius:12px 22px 22px 12px;color:var(--gold);display:flex;flex-direction:column;align-items:center;
+  justify-content:space-between;padding:32px 22px;text-align:center;margin:0 auto;
+  box-shadow:inset 12px 0 0 rgba(0,0,0,.18),0 22px 44px rgba(20,39,92,.35)}
+.passport .kicker{letter-spacing:.32em;font-size:11px;text-transform:uppercase;margin:0}
+.passport h1{font-size:34px;color:var(--gold);margin:6px 0 0}
+.passport .team{font-family:'Special Elite',monospace;font-size:13px;opacity:.85;margin:0}
+.cover-copy{max-width:420px;text-align:center;margin:0 auto}
+.cover-copy p{color:var(--muted);margin:0 0 18px}
+.cover-meta{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.cover-meta span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600}
+
+/* ---------- Game ---------- */
+.topbar{display:flex;align-items:flex-end;gap:12px;margin-bottom:6px}
+.topbar h1{font-size:clamp(24px,6vw,34px);color:var(--navy)}
+.topbar .grow{flex:1}
+.score{text-align:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:6px 12px;min-width:62px}
+.score b{display:block;font-size:20px;color:var(--navy);line-height:1.1}
+.score small{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.instr{color:var(--muted);margin:4px 0 16px}
+.game-grid{display:grid;gap:16px;grid-template-areas:"passport" "board" "map"}
+@media(min-width:900px){.game-grid{grid-template-columns:1fr 320px;grid-template-areas:"board passport" "board map";align-items:start}}
+.mini{font-size:16px;color:var(--navy);margin-bottom:12px}
+
+.board{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:14px}
+#lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.row{display:grid;grid-template-columns:repeat(var(--n,3),1fr);gap:8px;position:relative;z-index:1}
+.photos{margin-bottom:64px}
+.photo{position:relative;aspect-ratio:3/4;border-radius:14px;overflow:hidden;border:3px solid transparent;padding:0;
+  background:linear-gradient(160deg,var(--c1),var(--c2));box-shadow:0 4px 12px rgba(0,0,0,.08);transition:transform .15s,border-color .15s,box-shadow .15s}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:rgba(255,255,255,.9);
+  background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.09) 0 10px,transparent 10px 20px)}
+.ph svg{width:clamp(22px,6vw,34px);height:auto}
+.ph span{font-family:'Special Elite',monospace;font-size:clamp(9px,2.4vw,12px);letter-spacing:.16em}
+.ph-num{position:absolute;top:7px;left:7px;z-index:1;background:rgba(255,255,255,.94);color:var(--navy);font-weight:700;
+  width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px}
+.ph-check{position:absolute;top:7px;right:7px;z-index:1;background:var(--ok);color:#fff;width:26px;height:26px;border-radius:50%;
+  display:none;place-items:center;font-size:14px;font-weight:700}
+.photo.selected{border-color:var(--orange);transform:translateY(-4px) scale(1.02);box-shadow:0 0 0 5px rgba(243,108,33,.25)}
+.photo.matched{border-color:var(--ok);cursor:default}
+.photo.matched .ph-check{display:grid}
+.name{min-height:58px;border-radius:14px;border:2px solid var(--line);background:#fff;font-weight:700;
+  font-size:clamp(12px,3.3vw,17px);color:var(--navy);padding:8px 4px;line-height:1.15;transition:transform .15s,border-color .15s,background .15s}
+.name.selected{border-color:var(--orange);background:#FFF1E8;transform:translateY(-2px)}
+.name.matched{border-color:var(--ok);background:#EAF7EF;color:var(--ok);cursor:default}
+.shake{animation:shake .45s;border-color:var(--bad)!important}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.ln{fill:none;stroke-width:4;stroke-linecap:round}
+.ln.ok{stroke:var(--ok)}
+.ln.bad{stroke:var(--bad);stroke-dasharray:6 7}
+.ln.draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw .55s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.hint{margin-top:14px;background:#FFF6DA;border:1px solid #F1D98A;border-radius:14px;padding:12px 14px;font-size:15px}
+.hint[hidden]{display:none}
+.hint b{color:var(--bad)}
+
+.passport-page{background:repeating-linear-gradient(0deg,#FFFDF8 0 22px,#F3ECDC 22px 23px);}
+.slots{display:flex;gap:6px;justify-content:space-around}
+.slot{width:74px;height:74px;border-radius:50%;border:2px dashed #CBBF9F;display:grid;place-items:center;color:#B9AD8C;
+  font-family:'Special Elite',monospace;font-size:22px;flex-shrink:0}
+.slot.filled{border-color:transparent}
+.stamp{width:74px;height:74px;border-radius:50%;border:3px solid var(--sc);color:var(--sc);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;transform:rotate(var(--rot));font-family:'Special Elite',monospace;
+  box-shadow:inset 0 0 0 4px rgba(255,253,248,.9),inset 0 0 0 5.5px var(--sc);padding:8px;opacity:.93;background:rgba(255,253,248,.55)}
+.stamp .st-top,.stamp .st-date{font-size:8px;letter-spacing:.14em}
+.stamp .st-name{font-size:9.5px;font-weight:700;line-height:1.05;margin:2px 0;text-transform:uppercase}
+.stamp.land{animation:land .5s cubic-bezier(.2,1.5,.4,1)}
+@keyframes land{from{transform:rotate(var(--rot)) scale(2.4);opacity:0}to{transform:rotate(var(--rot)) scale(1);opacity:.93}}
+
+.map{width:100%;max-width:300px;display:block;margin:0 auto}
+.map .sea{fill:#E6EFF8}
+.map .land{fill:#F3E6CC;stroke:#D6C29A;stroke-width:1}
+.map .lake{fill:#E6EFF8;stroke:#D6C29A;stroke-width:.8}
+.map .route{fill:none;stroke:var(--orange);stroke-width:2;stroke-dasharray:4 4}
+.pin .dot{fill:#C2BAA8;stroke:#fff;stroke-width:1.5}
+.pin .ring{fill:none;stroke:var(--orange);stroke-width:2;opacity:0;transform-box:fill-box;transform-origin:center}
+.pin.lit{cursor:pointer}
+.pin.lit .dot{fill:var(--orange)}
+.pin.lit .ring{animation:pulse 2.2s ease-out infinite}
+.pin text{font-size:9.5px;font-weight:700;fill:var(--navy);paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+@keyframes pulse{0%{opacity:.8;transform:scale(.5)}100%{opacity:0;transform:scale(1.6)}}
+.map-note{text-align:center;font-size:13px;color:var(--muted);margin:8px 0 0}
+
+/* ---------- Modal ---------- */
+.modal{position:fixed;inset:0;background:rgba(14,22,45,.55);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+.modal[hidden]{display:none}
+.sheet{background:var(--paper);width:100%;max-width:680px;max-height:92vh;border-radius:22px 22px 0 0;display:flex;flex-direction:column;
+  overflow:hidden;position:relative;animation:up .35s ease}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+@media(min-width:720px){.modal{align-items:center;padding:24px}.sheet{border-radius:22px}}
+.sheet-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1}
+.hero{height:210px;position:relative;background:linear-gradient(160deg,var(--c1),var(--c2));overflow:hidden}
+.hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero .ph svg{width:44px;opacity:.7}
+.hero .stamp{width:84px;height:84px;position:absolute;right:16px;bottom:14px;background:rgba(255,253,248,.92)}
+.x{position:absolute;top:12px;right:12px;z-index:3;width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.95);
+  font-size:22px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.sheet-body{padding:20px 20px 12px}
+.sheet-body h2{font-size:32px;color:var(--navy)}
+.tagline{font-family:'Fraunces',serif;font-style:italic;color:var(--orange-d);margin:4px 0 12px;font-size:17px}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 22px}
+.facts span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600}
+.sheet-body h3{font-size:20px;margin-bottom:12px;color:var(--navy)}
+.tabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px}
+.tab{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-weight:600;white-space:nowrap;font-size:14px}
+.tab[aria-selected="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.story{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px}
+.story[hidden]{display:none}
+.story header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--navy);color:var(--gold);display:grid;place-items:center;font-weight:700}
+.story header small{display:block;color:var(--muted);font-size:12px}
+.story h4{font-size:19px;margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;list-style:none;padding:0;margin:0 0 14px}
+.chips li{background:#FFF1E8;color:var(--orange-d);border-radius:999px;padding:4px 10px;font-size:13px;font-weight:600}
+.story h5{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px;font-family:'DM Sans',sans-serif}
+.story p{margin:0 0 10px;font-size:15.5px;line-height:1.65}
+.followup{border-left:3px solid var(--orange);padding:8px 12px;background:var(--cream);border-radius:0 10px 10px 0;font-size:15px}
+.sheet-foot{padding:12px 20px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--paper)}
+
+/* ---------- Quiz & End ---------- */
+.center{max-width:620px;margin:0 auto;text-align:center}
+.big-icon{width:64px;height:64px;margin:20px auto 10px;color:var(--orange);display:block}
+.center h1{font-size:clamp(28px,7vw,40px);color:var(--navy);margin-bottom:10px}
+.center p.lead{color:var(--muted);margin:0 0 24px}
+.btn-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+blockquote{font-family:'Fraunces',serif;font-style:italic;font-size:clamp(20px,5vw,26px);color:var(--navy);margin:18px 0;line-height:1.35}
+.qbar{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 4px}
+.qbar i{display:block;height:100%;background:var(--orange);transition:width .3s}
+.opts{display:grid;gap:10px;margin:18px 0}
+@media(min-width:600px){.opts{grid-template-columns:repeat(2,1fr)}}
+.opt{min-height:56px;border-radius:14px;border:2px solid var(--line);background:#fff;font-weight:700;color:var(--navy);font-size:16px}
+.opt.right{border-color:var(--ok);background:#EAF7EF;color:var(--ok)}
+.opt.wrong{border-color:var(--bad);background:#FDECEC;color:var(--bad)}
+.qfb{min-height:52px;font-size:15px;color:var(--muted)}
+.qfb b.r{color:var(--ok)} .qfb b.w{color:var(--bad)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}
+.stats div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 6px}
+.stats b{display:block;font-size:24px;color:var(--navy)}
+.stats small{color:var(--muted);font-size:12px}
+.rank{display:inline-block;font-family:'Special Elite',monospace;color:var(--orange-d);border:2px solid var(--orange-d);
+  border-radius:8px;padding:6px 14px;transform:rotate(-3deg);margin-bottom:14px;font-size:18px}
+.revisit{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0 26px}
+.revisit button{border:1.5px solid var(--navy);background:#fff;color:var(--navy);border-radius:999px;padding:8px 14px;font-weight:600}
+.end-map{max-width:340px;margin:0 auto}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ===== COVER ===== -->
+<section id="screen-cover" class="screen active">
+  <div class="passport" aria-hidden="true">
+    <p class="kicker">Kingdom of the Netherlands</p>
+    <svg viewBox="0 0 100 100" width="100" height="100" fill="none" stroke="currentColor">
+      <circle cx="50" cy="50" r="46" stroke-width="2.5"/>
+      <circle cx="50" cy="50" r="40" stroke-width="1" stroke-dasharray="2 3"/>
+      <path d="M50 74V50" stroke-width="3" stroke-linecap="round"/>
+      <path d="M50 66c-6-8-14-8-18-6 4 6 10 8 18 6zM50 62c6-8 14-8 18-6-4 6-10 8-18 6z" fill="currentColor" stroke="none"/>
+      <path d="M38 30c0 12 5 20 12 20s12-8 12-20l-6 6-6-10-6 10z" fill="currentColor" stroke="none"/>
+    </svg>
+    <div>
+      <h1>City Passport</h1>
+      <p class="team" id="teamName"></p>
+    </div>
+  </div>
+  <div class="cover-copy">
+    <p>We explored the Netherlands one trip at a time. Match each photo to its city to unlock our stories and collect a stamp for every place.</p>
+    <div class="cover-meta" id="coverMeta"></div>
+    <button class="btn" id="startBtn">Open the passport →</button>
+  </div>
+</section>
+
+<!-- ===== GAME ===== -->
+<section id="screen-game" class="screen">
+  <div class="wrap">
+    <header class="topbar">
+      <div class="grow"><p class="eyebrow">Mission</p><h1>Match the city</h1></div>
+      <div class="score"><b id="progress">0/4</b><small>stamps</small></div>
+      <div class="score"><b id="tries">0</b><small>tries</small></div>
+    </header>
+    <p class="instr" id="instr">Tap a photo, then tap the city it belongs to.</p>
+
+    <div class="game-grid">
+      <section class="card passport-page" style="grid-area:passport">
+        <h2 class="mini">My passport</h2>
+        <div class="slots" id="slots"></div>
+      </section>
+
+      <section style="grid-area:board">
+        <div class="board" id="board">
+          <svg id="lines" aria-hidden="true"></svg>
+          <div class="row photos" id="photos"></div>
+          <div class="row names" id="names"></div>
+        </div>
+        <div class="hint" id="hint" hidden aria-live="polite"></div>
+      </section>
+
+      <section class="card" style="grid-area:map">
+        <h2 class="mini">Where we've been</h2>
+        <svg class="map" id="gameMap" viewBox="0 0 260 290" role="img" aria-label="Map of the Netherlands"></svg>
+        <p class="map-note">Tap a lit pin to reopen its story.</p>
+      </section>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BONUS QUIZ ===== -->
+<section id="screen-quiz" class="screen">
+  <div class="center" id="quiz"></div>
+</section>
+
+<!-- ===== END ===== -->
+<section id="screen-end" class="screen">
+  <div class="center" id="end"></div>
+</section>
+
+<div class="modal" id="modal" hidden></div>
+
+<script>
+/* =====================================================================
+   EDIT YOUR CONTENT HERE
+   - Photos: put files in an /images folder next to index.html using the
+     filenames below (any aspect ratio; they are cropped to fit).
+   - author: replace "Member 1..4" with real names.
+   ===================================================================== */
+const TEAM_NAME = 'Team SQ_2';
+
+const CITIES = [
+  {
+    id: 'zaanse', name: 'Zaanse Schans', type: 'Historic village', province: 'North Holland',
+    photo: 'images/zaanse-schans.jpg', focus: '72% 50%', colors: ['#2F7D5B', '#A8D8BC'], stampColor: '#2F7D5B',
+    lon: 4.82, lat: 52.47, label: { dx: -9, dy: -3, anchor: 'end' },
+    tagline: `Windmills, wooden houses and Dutch craftsmanship`,
+    intro: `A living open-air village on the river Zaan, just north of Amsterdam. Its 18th-century industrial windmills still turn, and the green wooden houses hold workshops where clogs and cheese are made the traditional way.`,
+    hints: [
+      `This place is famous for its working 18th-century windmills.`,
+      `Green wooden houses, clog-making and cheese demos along the river Zaan.`
+    ]
+  },
+  {
+    id: 'amsterdam', name: 'Amsterdam', type: 'Capital city', province: 'North Holland',
+    photo: 'images/amsterdam.jpg', colors: ['#C8102E', '#F4A3AE'], stampColor: '#B0122C',
+    lon: 4.90, lat: 52.37, label: { dx: -9, dy: 11, anchor: 'end' },
+    tagline: `Canals, Golden Age art and a lively old centre`,
+    intro: `The Dutch capital, built around a 17th-century ring of canals. Two of our trips went here: one into the Rijksmuseum and the historic centre, and one to show family the city from a canal boat.`,
+    hints: [
+      `Home of the Rijksmuseum and its Golden Age masterpieces.`,
+      `It's the capital: canal boat tours, stroopwafels and very busy Saturdays.`
+    ]
+  },
+  {
+    id: 'utrecht', name: 'Utrecht', type: 'Historic city', province: 'Utrecht',
+    photo: 'images/utrecht.jpg', focus: '50% 30%', colors: ['#5B3E9D', '#C9B8EE'], stampColor: '#5B3E9D',
+    lon: 5.12, lat: 52.09, label: { dx: 9, dy: 4, anchor: 'start' },
+    tagline: `A medieval canal city with a famously friendly vibe`,
+    intro: `One of the oldest cities in the Netherlands, centred on the gothic Dom Tower and the Oudegracht, a canal with unique two-level wharves and cellars at water height. A student city where it is easy to meet people.`,
+    hints: [
+      `Look for the tall gothic Dom Tower in the centre.`,
+      `You can kayak the Oudegracht, a canal with two-level wharf cellars.`
+    ]
+  },
+  {
+    id: 'deventer', name: 'Deventer', type: 'Hanseatic city', province: 'Overijssel',
+    photo: 'images/deventer.jpg', colors: ['#B7791F', '#F2D48A'], stampColor: '#9A5B12',
+    lon: 6.16, lat: 52.25, label: { dx: 9, dy: 4, anchor: 'start' },
+    tagline: `Small shops and old streets on the IJssel`,
+    intro: `A historic Hanseatic city on the river IJssel, in the east of the country. Its old centre is compact and walkable, and the Walstraat is lined with small independent shops full of little things to browse.`,
+    hints: [
+      `A Hanseatic city on the river IJssel, in the east of the Netherlands.`,
+      `Its Walstraat is full of small independent shops and little knick-knacks.`
+    ]
+  }
+];
+
+const STORIES = [
+  {
+    id: 's1', author: 'Member 1', activity: 'Location Activity 1', week: 'Week 5', date: '2026-10-07',
+    cities: ['zaanse', 'utrecht'],
+    title: 'Guiding a friend: windmills & canal kayaks',
+    highlights: ['Working windmills', 'Clog & cheese making', 'Kayaking the Oudegracht', 'Dom Tower views'],
+    description: [
+      `During this activity, I hosted a close friend visiting the Netherlands from abroad and organized a full-day cultural excursion to explore two iconic Dutch destinations: Zaanse Schans and Utrecht.`,
+      `In the morning, we visited Zaanse Schans, a famous historic village renowned for its well-preserved 18th-century industrial windmills, traditional green wooden houses, and artisan craft workshops. We walked along the Zaan River, toured working windmills, and observed traditional Dutch clog-making and cheese-crafting demonstrations, learning about how wind power historically fueled Dutch innovation and maritime trade.`,
+      `In the afternoon, we traveled to Utrecht, one of the oldest cities in the Netherlands. To experience the city from a unique vantage point, we rented kayaks and paddled along the historic Oudegracht (Old Canal), navigating through its unique two-tiered wharf cellars and under historic stone bridges while enjoying views of the iconic Dom Tower from the water. Afterward, we explored the vibrant city center on foot and shared a meal at a canal-side cafe.`
+    ],
+    evaluation: [
+      `Acting as a guide for a visiting friend provided me with a fresh, appreciative perspective on Dutch cultural heritage and urban water integration. Seeing working historic windmills in Zaanse Schans and navigating Utrecht's medieval canal infrastructure firsthand transformed abstract knowledge about Dutch history into an immersive cultural experience.`,
+      `Kayaking along Utrecht's canals highlighted how remarkably Dutch cities blend historic water architecture with modern leisure and community life. Navigating public transit between provinces and organizing the itinerary also boosted my confidence in traveling across the Netherlands. This trip deepened my appreciation for Dutch culture beyond the classroom and demonstrated how outdoor exploration fosters memorable cross-cultural bonding.`
+    ],
+    followup: ''
+  },
+  {
+    id: 's2', author: 'Member 2', activity: 'Location Activity 1', week: 'Week 2', date: '2026-09-05',
+    cities: ['amsterdam'],
+    title: 'Rijksmuseum & the old city centre',
+    highlights: ['Rijksmuseum', 'Golden Age paintings', 'Red Light District by day', 'Klomp keychain'],
+    description: [
+      `For my first Location activity, I travelled to Amsterdam with a friend from my exchange programme to explore some of the city's most iconic cultural sites. We visited the Rijksmuseum, the Netherlands' national museum of art and history, where we walked through galleries covering centuries of Dutch painting, including major works from the Dutch Golden Age.`,
+      `Afterwards, we walked through the Red Light District, one of Amsterdam's oldest neighbourhoods, to see it as a historical and cultural part of the city centre rather than only its more sensational reputation. We had pizza for lunch near the city centre, and before heading back, I bought a small souvenir — a keychain shaped like a traditional Dutch wooden clog (klomp) — as a memento of the trip.`
+    ],
+    evaluation: [
+      `The Rijksmuseum gave me a much deeper appreciation for Dutch history than I expected. Seeing the scale and detail of Golden Age paintings in person — works I had previously only seen in textbooks — made Dutch history feel tangible rather than abstract. It also helped me understand why art and trade are such a central part of the Dutch national identity.`,
+      `Walking through the Red Light District was a different kind of learning experience. I went in expecting mostly tourist curiosity, but seeing it during the day, as an ordinary part of the old city with canals, cafes, and historic buildings, gave me a more balanced view — it's a small, specific part of Amsterdam's identity, not representative of the whole city or the whole country, which was a useful correction to my initial assumption.`
+    ],
+    followup: `For my next Location activity, I want to visit a place tied to contemporary Dutch life rather than historical sites — something like a local market, a design museum, or a smaller city outside Amsterdam — so I can compare how "typical" Dutch life today differs from the historical image I got from the Rijksmuseum.`
+  },
+  {
+    id: 's3', author: 'Member 3', activity: 'Language Activity 1', week: '', date: '',
+    cities: ['amsterdam'],
+    title: 'A family day on the canals',
+    highlights: ['Canal boat tour', 'Dutch fries', 'Stroopwafels', 'Street musician'],
+    description: [
+      `I visited Amsterdam with my family; we wanted to experience one of the most beautiful cities in the Netherlands. I wanted to experience the local culture, food, and the unique atmosphere of the city, especially its famous canals.`,
+      `We took a boat tour to explore the canals, and we tried some local specialties, including Dutch fries and stroopwafels. I was the guide for my family since I had visited Amsterdam before. We also listened to a local musician, who was very good.`
+    ],
+    evaluation: [
+      `The transportation went really well — we didn't have a hard time finding a parking spot for our car. Moving around the city was pretty hard, though, because we went there on a Saturday, which meant an overcrowded centre.`,
+      `I learned that Dutch people love spending their weekends having drinks, since almost every bar was FULL. Dutch people are also very accepting, and they respect everything you are unless it's harmful.`
+    ],
+    followup: ''
+  },
+  {
+    id: 's4', author: 'Member 4', activity: 'Location Activity 2', week: '', date: '',
+    cities: ['utrecht'],
+    title: 'Utrecht with no plan at all',
+    highlights: ['Scenic train ride', 'Gothic Dom church', 'Stylish locals', 'New friends'],
+    description: [
+      `I went to Utrecht with no plan in mind. I wanted to experience it naturally, with no plans at all, since I was alone this time. I enjoyed the train ride to Utrecht — it was nice to watch my surroundings.`,
+      `After arriving, I first went to a supermarket to buy myself a drink, then left the mall to dive into the city centre. The city centre was very cozy, and the people of Utrecht were very stylish. The most breathtaking part was the huge cathedral that looked gothic. I drank some beer in a bar and had a few cocktails to end the night.`
+    ],
+    evaluation: [
+      `Everything went well except one thing: the constant rain — welcome to the Netherlands. The people I met in Utrecht were amazing and very friendly. I spent my night with a friend group, and I can say it is very easy to socialize in Utrecht.`,
+      `I wasn't really planning to make friends there because I usually do things solo, but I couldn't refuse a warm invitation. Overall, it was very good and I would do it again — I don't think plans are necessary in Utrecht. Dutch people are again very respectful and friendly.`
+    ],
+    followup: `I wouldn't do anything differently. Going with no plans was the perfect choice to relax my mind; I had no expectations, so it was easier to enjoy the experience. Honestly, my next location will probably be Utrecht again.`
+  },
+  {
+    id: 's5', author: 'Member 5', activity: 'Location Activity', week: '', date: '',
+    cities: ['deventer'],
+    title: 'Browsing the little shops of Walstraat',
+    highlights: ['Walstraat', 'Small independent shops', 'Little knick-knacks'],
+    description: [
+      `I walked along the Walstraat in Deventer and browsed the small shops there, looking at all kinds of little knick-knacks and items.`
+    ],
+    evaluation: [],
+    followup: ''
+  }
+];
+
+const QUIZ = [
+  { quote: `We paddled kayaks through two-level wharf cellars and under old stone bridges.`, answer: 'utrecht', from: 's1' },
+  { quote: `Paintings I'd only ever seen in textbooks were suddenly right in front of me.`, answer: 'amsterdam', from: 's2' },
+  { quote: `We watched clogs and cheese being made next to working windmills.`, answer: 'zaanse', from: 's1' },
+  { quote: `It rained the whole time, but a group of strangers invited me to spend the night with them.`, answer: 'utrecht', from: 's4' },
+  { quote: `A canal boat tour, stroopwafels, and every single bar was full on a Saturday.`, answer: 'amsterdam', from: 's3' },
+  { quote: `I spent my time browsing little knick-knacks in the small shops of Walstraat.`, answer: 'deventer', from: 's5' }
+];
+
+/* ===================================================================== */
+
+const NL = [[4.76,52.96],[5.05,52.94],[5.38,53.08],[5.45,53.22],[5.70,53.35],[6.20,53.40],[6.75,53.45],[7.00,53.33],[7.21,53.24],
+  [7.20,53.00],[7.05,52.64],[6.72,52.48],[7.03,52.40],[7.05,52.23],[6.73,52.04],[6.83,51.97],[6.40,51.84],[6.10,51.88],[5.95,51.74],
+  [6.22,51.48],[6.08,51.22],[5.90,51.05],[6.08,50.90],[6.02,50.75],[5.69,50.76],[5.64,50.86],[5.80,51.16],[5.48,51.30],[5.05,51.47],
+  [4.75,51.48],[4.25,51.38],[3.85,51.21],[3.37,51.37],[3.60,51.62],[3.88,51.82],[4.05,52.00],[4.30,52.17],[4.47,52.34],[4.60,52.58],[4.68,52.85]];
+const LAKE = [[5.06,52.92],[5.36,53.04],[5.55,52.90],[5.70,52.84],[5.55,52.68],[5.40,52.62],[5.20,52.48],[5.10,52.40],[5.02,52.48],[5.07,52.65],[5.00,52.80]];
+const ISLANDS = [[4.80,53.07,4.5,9,15],[5.05,53.26,8,2.5,-30],[5.35,53.39,12,2.5,-15],[5.75,53.45,9,2.2,-5],[6.20,53.48,6,2,-5]];
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const byId = id => CITIES.find(c => c.id === id);
+const storyById = id => STORIES.find(s => s.id === id);
+const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+let state;
+const freshState = () => ({ selPhoto: null, selName: null, matched: new Set(), pairs: [], temp: null, newLine: null,
+  attempts: 0, wrong: {}, hintsUsed: 0, rot: {}, busy: false, q: 0, quizScore: 0, quizDone: false });
+
+function showScreen(name) {
+  $$('.screen').forEach(s => s.classList.toggle('active', s.id === 'screen-' + name));
+  window.scrollTo(0, 0);
+  if (name === 'game') requestAnimationFrame(drawLines);
+}
+
+/* ---------- Cover ---------- */
+$('#teamName').textContent = TEAM_NAME;
+$('#coverMeta').innerHTML = `<span>${CITIES.length} places</span><span>${STORIES.length} stories</span><span>1 passport</span>`;
+$('#startBtn').addEventListener('click', () => { startGame(); });
+
+/* ---------- Game ---------- */
+function startGame() {
+  state = freshState();
+  buildBoard();
+  renderPassport();
+  renderMap($('#gameMap'));
+  updateProgress();
+  hideHint();
+  showScreen('game');
+}
+
+const CAM = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h3l2-3h6l2 3h3v11H4z" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5"/></svg>`;
+function photoInner(c, i) {
+  return `<span class="ph" aria-hidden="true">${CAM}<span>PHOTO ${i}</span></span><img src="${c.photo}" alt="" style="object-position:${c.focus || '50% 50%'}" onerror="this.remove()">`;
+}
+
+function buildBoard() {
+  const photos = shuffle(CITIES);
+  let names = shuffle(CITIES);
+  let guard = 0;
+  while (names.some((c, i) => c.id === photos[i].id) && guard++ < 50) names = shuffle(CITIES);
+
+  $('#photos').innerHTML = photos.map((c, i) => `
+    <button class="photo" data-id="${c.id}" data-num="${i + 1}" aria-label="Mystery photo ${i + 1}" style="--c1:${c.colors[0]};--c2:${c.colors[1]}">
+      ${photoInner(c, i + 1)}<span class="ph-num">${i + 1}</span><span class="ph-check" aria-hidden="true">✓</span>
+    </button>`).join('');
+  $('#board').style.setProperty('--n', CITIES.length);
+  $('#names').innerHTML = names.map(c => `<button class="name" data-id="${c.id}">${c.name}</button>`).join('');
+
+  $$('.photo').forEach(b => b.addEventListener('click', () => pick('photo', b.dataset.id)));
+  $$('.name').forEach(b => b.addEventListener('click', () => pick('name', b.dataset.id)));
+  drawLines();
+}
+
+function pick(kind, id) {
+  if (state.busy || state.matched.has(id)) return;
+  const key = kind === 'photo' ? 'selPhoto' : 'selName';
+  state[key] = state[key] === id ? null : id;
+  updateSelection();
+  if (state.selPhoto && state.selName) check();
+  else if (state.selPhoto) setInstr('Now tap the city name that matches this photo.');
+  else if (state.selName) setInstr('Now tap the photo that shows this city.');
+  else setInstr('Tap a photo, then tap the city it belongs to.');
+}
+
+function setInstr(t) { $('#instr').textContent = t; }
+function updateSelection() {
+  $$('.photo').forEach(b => b.classList.toggle('selected', b.dataset.id === state.selPhoto));
+  $$('.name').forEach(b => b.classList.toggle('selected', b.dataset.id === state.selName));
+}
+function clearSel() { state.selPhoto = null; state.selName = null; updateSelection(); }
+
+function check() {
+  const p = state.selPhoto, n = state.selName;
+  const pEl = $(`.photo[data-id="${p}"]`), nEl = $(`.name[data-id="${n}"]`);
+  state.busy = true;
+  state.attempts++;
+
+  if (p === n) {
+    state.matched.add(p);
+    state.pairs.push(p);
+    state.newLine = p;
+    pEl.classList.add('matched'); nEl.classList.add('matched');
+    pEl.disabled = true; nEl.disabled = true;
+    clearSel();
+    drawLines();
+    addStamp(p);
+    renderMap($('#gameMap'));
+    hideHint();
+    setInstr(state.matched.size === CITIES.length ? 'All stamps collected!' : 'Correct! Keep going.');
+    setTimeout(() => { state.busy = false; openCity(p, { fromMatch: true }); }, 750);
+  } else {
+    state.temp = [p, n];
+    drawLines();
+    pEl.classList.add('shake'); nEl.classList.add('shake');
+    state.wrong[p] = (state.wrong[p] || 0) + 1;
+    state.hintsUsed++;
+    const c = byId(p);
+    const h = c.hints[Math.min(state.wrong[p] - 1, c.hints.length - 1)];
+    showHint(`<b>Not quite!</b> Hint for photo ${pEl.dataset.num}: ${h}`);
+    setTimeout(() => {
+      pEl.classList.remove('shake'); nEl.classList.remove('shake');
+      state.temp = null; clearSel(); drawLines(); state.busy = false;
+      setInstr('Tap a photo, then tap the city it belongs to.');
+    }, 700);
+  }
+  updateProgress();
+}
+
+function showHint(html) { const h = $('#hint'); h.innerHTML = html; h.hidden = false; }
+function hideHint() { $('#hint').hidden = true; }
+function updateProgress() {
+  $('#progress').textContent = `${state.matched.size}/${CITIES.length}`;
+  $('#tries').textContent = state.attempts;
+}
+
+/* ---------- Lines ---------- */
+function anchor(el, edge) {
+  const b = $('#board').getBoundingClientRect(), r = el.getBoundingClientRect();
+  return { x: r.left - b.left + r.width / 2, y: edge === 'bottom' ? r.bottom - b.top : r.top - b.top };
+}
+function pathFor(pid, nid) {
+  const a = anchor($(`.photo[data-id="${pid}"]`), 'bottom');
+  const b = anchor($(`.name[data-id="${nid}"]`), 'top');
+  const k = (b.y - a.y) * 0.55;
+  return `M${a.x},${a.y} C${a.x},${a.y + k} ${b.x},${b.y - k} ${b.x},${b.y}`;
+}
+function drawLines() {
+  const svg = $('#lines'), board = $('#board');
+  if (!state || !board.offsetParent) return;
+  const r = board.getBoundingClientRect();
+  svg.setAttribute('viewBox', `0 0 ${r.width} ${r.height}`);
+  let html = state.pairs.map(id =>
+    `<path class="ln ok${id === state.newLine ? ' draw' : ''}" ${id === state.newLine ? 'pathLength="1"' : ''} d="${pathFor(id, id)}"/>`).join('');
+  if (state.temp) html += `<path class="ln bad" d="${pathFor(state.temp[0], state.temp[1])}"/>`;
+  svg.innerHTML = html;
+  state.newLine = null;
+}
+window.addEventListener('resize', () => requestAnimationFrame(drawLines));
+
+/* ---------- Passport ---------- */
+function stampHTML(c, extra = '') {
+  if (state.rot[c.id] === undefined) state.rot[c.id] = Math.round(Math.random() * 24 - 12);
+  return `<div class="stamp ${extra}" style="--sc:${c.stampColor};--rot:${state.rot[c.id]}deg" aria-label="${c.name} stamp">
+    <span class="st-top">VISITED</span><span class="st-name">${c.name}</span><span class="st-date">NL · 2026</span></div>`;
+}
+function renderPassport() {
+  $('#slots').innerHTML = CITIES.map(c => state.matched.has(c.id)
+    ? `<div class="slot filled" data-id="${c.id}">${stampHTML(c)}</div>`
+    : `<div class="slot" data-id="${c.id}" aria-label="Empty stamp slot">?</div>`).join('');
+}
+function addStamp(id) {
+  const slot = $(`.slot[data-id="${id}"]`);
+  slot.classList.add('filled');
+  slot.innerHTML = stampHTML(byId(id), 'land');
+}
+
+/* ---------- Map ---------- */
+const P = ([lon, lat]) => [+((lon - 3.25) * 62 + 5).toFixed(1), +((53.55 - lat) * 100 + 5).toFixed(1)];
+const pts = arr => arr.map(p => P(p).join(',')).join(' ');
+function renderMap(svg, { all = false, route = false } = {}) {
+  const lit = c => all || state.matched.has(c.id);
+  let html = `<rect class="sea" x="0" y="0" width="260" height="290" rx="14"/>`;
+  html += ISLANDS.map(([lon, lat, rx, ry, rot]) => { const [x, y] = P([lon, lat]);
+    return `<ellipse class="land" cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" transform="rotate(${rot} ${x} ${y})"/>`; }).join('');
+  html += `<polygon class="land" points="${pts(NL)}"/><polygon class="lake" points="${pts(LAKE)}"/>`;
+  if (route) html += `<polyline class="route" points="${pts(CITIES.filter(lit).map(c => [c.lon, c.lat]))}"/>`;
+  html += CITIES.map(c => {
+    const [x, y] = P([c.lon, c.lat]), L = lit(c);
+    return `<g class="pin${L ? ' lit' : ''}" data-id="${c.id}" ${L ? `tabindex="0" role="button" aria-label="Open ${c.name}"` : ''}>
+      <circle class="ring" cx="${x}" cy="${y}" r="9"/><circle class="dot" cx="${x}" cy="${y}" r="4.5"/>
+      ${L ? `<text x="${x + c.label.dx}" y="${y + c.label.dy}" text-anchor="${c.label.anchor}">${c.name}</text>` : ''}</g>`;
+  }).join('');
+  svg.innerHTML = html;
+  $$('.pin.lit', svg).forEach(g => {
+    g.addEventListener('click', () => openCity(g.dataset.id));
+    g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCity(g.dataset.id); } });
+  });
+}
+
+/* ---------- City card (modal) ---------- */
+function storyHTML(s, i, show) {
+  const meta = [s.activity, s.week, s.date].filter(Boolean).join(' · ');
+  const initials = s.author.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  return `<article class="story" id="story-${i}" role="tabpanel" ${show ? '' : 'hidden'}>
+    <header><div class="avatar">${initials}</div><div><strong>${s.author}</strong><small>${meta}</small></div></header>
+    <h4>${s.title}</h4>
+    <ul class="chips">${s.highlights.map(h => `<li>${h}</li>`).join('')}</ul>
+    <h5>What we did</h5>${s.description.map(p => `<p>${p}</p>`).join('')}
+    ${s.evaluation.length ? `<h5>How it felt</h5>${s.evaluation.map(p => `<p>${p}</p>`).join('')}` : ''}
+    ${s.followup ? `<h5>Next time</h5><p class="followup">${s.followup}</p>` : ''}
+  </article>`;
+}
+
+let modalOpts = {};
+function openCity(id, opts = {}) {
+  modalOpts = { ...opts, id };
+  const c = byId(id);
+  const stories = STORIES.filter(s => s.cities.includes(id));
+  const allDone = state.matched.size === CITIES.length;
+  const footLabel = opts.fromMatch ? (allDone ? 'Passport complete! →' : 'Collect stamp & continue →') : 'Close';
+  const m = $('#modal');
+  m.innerHTML = `
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <button class="x" id="mX" aria-label="Close">×</button>
+      <div class="sheet-scroll">
+        <div class="hero" style="--c1:${c.colors[0]};--c2:${c.colors[1]}">
+          <span class="ph" aria-hidden="true">${CAM}</span>
+          <img src="${c.photo}" alt="${c.name}" style="object-position:${c.focus || '50% 50%'}" onerror="this.remove()">
+          ${stampHTML(c)}
+        </div>
+        <div class="sheet-body">
+          <p class="eyebrow">${c.type} · ${c.province}</p>
+          <h2 id="mTitle">${c.name}</h2>
+          <p class="tagline">${c.tagline}</p>
+          <p>${c.intro}</p>
+          <div class="facts">
+            <span>${stories.length} team ${stories.length === 1 ? 'story' : 'stories'}</span>
+            <span>${c.province}</span>
+          </div>
+          <h3>Our stories</h3>
+          ${stories.length > 1 ? `<div class="tabs" role="tablist">${stories.map((s, i) =>
+            `<button class="tab" role="tab" data-i="${i}" aria-selected="${i === 0}">${s.author}</button>`).join('')}</div>` : ''}
+          ${stories.map((s, i) => storyHTML(s, i, i === 0)).join('')}
+        </div>
+      </div>
+      <div class="sheet-foot"><button class="btn block" id="mClose">${footLabel}</button></div>
+    </div>`;
+  m.hidden = false;
+  document.body.style.overflow = 'hidden';
+  $$('.tab', m).forEach(t => t.addEventListener('click', () => {
+    $$('.tab', m).forEach(x => x.setAttribute('aria-selected', x === t));
+    $$('.story', m).forEach((s, i) => s.hidden = i !== +t.dataset.i);
+  }));
+  $('#mX').addEventListener('click', closeCity);
+  $('#mClose').addEventListener('click', closeCity);
+  $('#mClose').focus({ preventScroll: true });
+}
+function closeCity() {
+  const m = $('#modal');
+  if (m.hidden) return;
+  m.hidden = true; m.innerHTML = '';
+  document.body.style.overflow = '';
+  if (modalOpts.fromMatch && state.matched.size === CITIES.length && !state.quizDone) setTimeout(showBonusIntro, 250);
+  modalOpts = {};
+}
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeCity(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCity(); });
+
+/* ---------- Bonus quiz ---------- */
+function showBonusIntro() {
+  $('#quiz').innerHTML = `
+    <svg class="big-icon" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3"><circle cx="32" cy="32" r="28"/><circle cx="32" cy="32" r="22" stroke-width="1.5" stroke-dasharray="3 4"/><path d="M22 33l7 7 14-15" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <p class="eyebrow">Passport complete</p>
+    <h1>Bonus round: whose memory is it?</h1>
+    <p class="lead">Read a moment from one of our trips and guess which city it happened in. ${QUIZ.length} quick questions.</p>
+    <div class="btn-row"><button class="btn" id="qStart">Start bonus round</button><button class="btn ghost" id="qSkip">Skip to results</button></div>`;
+  $('#qStart').addEventListener('click', () => { state.q = 0; state.quizScore = 0; renderQ(); });
+  $('#qSkip').addEventListener('click', () => { state.quizDone = true; state.quizSkipped = true; renderEnd(); });
+  showScreen('quiz');
+}
+function renderQ() {
+  const q = QUIZ[state.q];
+  $('#quiz').innerHTML = `
+    <p class="eyebrow">Bonus round · ${state.q + 1} / ${QUIZ.length}</p>
+    <div class="qbar"><i style="width:${(state.q / QUIZ.length) * 100}%"></i></div>
+    <blockquote>“${q.quote}”</blockquote>
+    <p>Which city is this memory from?</p>
+    <div class="opts">${CITIES.map(c => `<button class="opt" data-id="${c.id}">${c.name}</button>`).join('')}</div>
+    <div class="qfb" id="qfb" aria-live="polite"></div>`;
+  $$('.opt').forEach(b => b.addEventListener('click', () => answerQ(b)));
+  window.scrollTo(0, 0);
+}
+function answerQ(btn) {
+  const q = QUIZ[state.q], ok = btn.dataset.id === q.answer, s = storyById(q.from);
+  $$('.opt').forEach(b => { b.disabled = true; if (b.dataset.id === q.answer) b.classList.add('right'); });
+  if (!ok) btn.classList.add('wrong'); else state.quizScore++;
+  const last = state.q === QUIZ.length - 1;
+  $('#qfb').innerHTML = `${ok ? '<b class="r">✓ Correct!</b>' : `<b class="w">✗ It was ${byId(q.answer).name}.</b>`}
+    From ${s.author}'s trip: “${s.title}”.
+    <div style="margin-top:14px"><button class="btn" id="qNext">${last ? 'See results →' : 'Next →'}</button></div>`;
+  $('#qNext').addEventListener('click', () => { if (last) { state.quizDone = true; renderEnd(); } else { state.q++; renderQ(); } });
+}
+
+/* ---------- End ---------- */
+function renderEnd() {
+  const perfect = state.attempts === CITIES.length;
+  const quizPart = state.quizSkipped ? '' : state.quizScore;
+  let rank = 'Curious Tourist';
+  if (perfect && (state.quizSkipped || state.quizScore === QUIZ.length)) rank = 'Master Navigator';
+  else if (state.hintsUsed <= 2 && (state.quizSkipped || state.quizScore >= QUIZ.length - 2)) rank = 'Seasoned Explorer';
+  $('#end').innerHTML = `
+    <svg class="big-icon" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3"><circle cx="32" cy="32" r="28"/><circle cx="32" cy="32" r="22" stroke-width="1.5" stroke-dasharray="3 4"/><path d="M22 33l7 7 14-15" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="rank">${rank}</div>
+    <h1>You explored our Netherlands!</h1>
+    <p class="lead">Every stamp collected. Here's the route through the places we visited.</p>
+    <svg class="map end-map" id="endMap" viewBox="0 0 260 290" role="img" aria-label="Map with all visited places"></svg>
+    <div class="stats">
+      <div><b>${state.attempts}</b><small>match tries</small></div>
+      <div><b>${state.hintsUsed}</b><small>hints used</small></div>
+      <div><b>${state.quizSkipped ? '–' : quizPart + '/' + QUIZ.length}</b><small>bonus score</small></div>
+    </div>
+    <p class="eyebrow">Revisit a city</p>
+    <div class="revisit">${CITIES.map(c => `<button data-id="${c.id}">${c.name}</button>`).join('')}</div>
+    <div class="btn-row"><button class="btn" id="again">Play again</button></div>`;
+  renderMap($('#endMap'), { all: true, route: true });
+  $$('.revisit button').forEach(b => b.addEventListener('click', () => openCity(b.dataset.id)));
+  $('#again').addEventListener('click', startGame);
+  showScreen('end');
+}
+</script>
+</body>
+</html>
